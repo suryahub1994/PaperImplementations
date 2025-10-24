@@ -30,6 +30,52 @@ struct PointDistance
     }
 };
 
+std::string knn_weighted_predict(
+    const std::vector<Point> &X_train,
+    const std::vector<std::string> &y_train,
+    const Point &X_test,
+    int k)
+{
+    std::priority_queue<PointDistance> distanceHeap;
+
+    for (int i = 0; i < X_train.size(); i++)
+    {
+        double distanceFromXTest = euclidean_distance(X_train[i], X_test);
+        PointDistance p1;
+        p1.distance = distanceFromXTest;
+        p1.point = X_train[i];
+        p1.idx = i;
+        distanceHeap.push(p1);
+        if (distanceHeap.size() > k)
+        {
+            distanceHeap.pop();
+        }
+    }
+
+    std::map<std::string, double> voteOfPoints;
+    double currentDistance = 0;
+    std::string category = "";
+    std::cout<<"-------------------------------------"<<std::endl;
+    std::cout<<"The point in consideration: "<< X_test[0] <<" "<<X_test[1]<<std::endl;
+    while (!distanceHeap.empty())
+    {
+        PointDistance point_distance = distanceHeap.top();
+        std::cout<<"The Neighbor is : "<< point_distance.point[0] <<" "<<point_distance.point[1] <<" "<<y_train[point_distance.idx]<<std::endl;
+        distanceHeap.pop();
+
+        voteOfPoints[y_train[point_distance.idx]] += 1/(0.001+point_distance.distance);
+
+        if (currentDistance < voteOfPoints[y_train[point_distance.idx]])
+        {
+            category = y_train[point_distance.idx];
+            currentDistance = voteOfPoints[y_train[point_distance.idx]];
+        }
+    }
+     std::cout<<"-------------------------------------"<<std::endl;
+
+    return category;
+}
+
 std::string knn_predict(
     const std::vector<Point> &X_train,
     const std::vector<std::string> &y_train,
@@ -86,16 +132,16 @@ int main()
     Point X_test = {5.0, 5.0};
     int k = 3;
 
-    std::string prediction = knn_predict(X_train, y_train, X_test, k);
+    std::string prediction = knn_weighted_predict(X_train, y_train, X_test, k);
     std::cout << "Predicted label: " << prediction << std::endl;
 
     Point X_test_1 = {0.0 , 0.0};
-    std::string prediction_1 = knn_predict(X_train, y_train, X_test_1, k);
+    std::string prediction_1 = knn_weighted_predict(X_train, y_train, X_test_1, k);
     std::cout << "Predicted label: " << prediction_1 << std::endl;
 
 
     Point X_test_2 = {9.0 , 9.0};
-    std::string prediction_2 = knn_predict(X_train, y_train, X_test_2, k);
+    std::string prediction_2 = knn_weighted_predict(X_train, y_train, X_test_2, k);
     std::cout << "Predicted label: " << prediction_2 << std::endl;
     return 0;
 }// I think this implementation is correct
